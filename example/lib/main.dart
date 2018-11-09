@@ -1,40 +1,79 @@
+import 'package:example/flutter_hashtags.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_scatter/flutter_scatter.dart';
 
-void main() => runApp(new MyApp());
+void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return new MaterialApp(
+    return MaterialApp(
       title: 'Flutter Demo',
-      theme: new ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or press Run > Flutter Hot Reload in IntelliJ). Notice that the
-        // counter didn't reset back to zero; the application is not restarted.
+      theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: new MyHomePage(title: 'Flutter Demo Home Page'),
+      home: Page(),
     );
+  }
+}
+
+class Page extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    List<Widget> widgets = <Widget>[];
+    for (var i = 0; i < kFlutterHashtags.length; i++) {
+      widgets.add(ScatterItem(kFlutterHashtags[i], i));
+    }
+
+    final screenSize = MediaQuery.of(context).size;
+    final ratio = screenSize.width / screenSize.height;
+
+    return Scaffold(
+      body: Center(
+        child: FittedBox(
+          child: Scatter(
+            alignment: Alignment.center,
+            delegate: ArchimedeanSpiralScatterDelegate(),
+            children: widgets,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class ScatterItem extends StatelessWidget {
+  ScatterItem(this.hashtag, this.index);
+  final FlutterHashtag hashtag;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    final TextStyle style = Theme.of(context).textTheme.body1.copyWith(
+          fontSize: hashtag.size.toDouble(),
+          color: hashtag.color,
+        );
+
+    return Container(
+      height: 20.0,
+      width: 20.0,
+      decoration: BoxDecoration(shape: BoxShape.circle, color: hashtag.color),
+      child: Center(child: Text('$index')),
+    );
+
+    // return RotatedBox(
+    //   quarterTurns: hashtag.rotated ? 1 : 0,
+    //   child: Text(
+    //     hashtag.hashtag,
+    //     style: style,
+    //   ),
+    // );
   }
 }
 
 class MyHomePage extends StatefulWidget {
   MyHomePage({Key key, this.title}) : super(key: key);
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
 
   final String title;
 
@@ -42,68 +81,114 @@ class MyHomePage extends StatefulWidget {
   _MyHomePageState createState() => new _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   int _counter = 0;
+  AnimationController startOffset;
+
+  void initState() {
+    super.initState();
+    startOffset = AnimationController.unbounded(
+      vsync: this,
+    );
+  }
 
   void _incrementCounter() {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
       _counter++;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return new Scaffold(
-      appBar: new AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: new Text(widget.title),
-      ),
-      body: new Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: new Column(
-          // Column is also layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug paint" (press "p" in the console where you ran
-          // "flutter run", or select "Toggle Debug Paint" from the Flutter tool
-          // window in IntelliJ) to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            new Text(
-              'You have pushed the button this many times:',
-            ),
-            new Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.display1,
-            ),
-          ],
+        appBar: new AppBar(
+          title: new Text(widget.title),
         ),
-      ),
-      floatingActionButton: new FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: new Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
-    );
+        body: Flow(
+            delegate: TestFlowDelegate(startOffset: startOffset),
+            children: <Widget>[
+              buildBox(0),
+              buildBox(1),
+              buildBox(2),
+              buildBox(3),
+              buildBox(4),
+              buildBox(5),
+              buildBox(6),
+            ]));
   }
+
+  Widget buildBox(int i) {
+    return MyBox(i);
+  }
+}
+
+class MyBox extends StatefulWidget {
+  MyBox(this.i);
+  final int i;
+
+  @override
+  _MyBoxState createState() => new _MyBoxState();
+}
+
+class _MyBoxState extends State<MyBox> {
+  Color color;
+
+  void initState() {
+    super.initState();
+    color = widget.i.isEven ? const Color(0xFF0000FF) : Colors.amber;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+        decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+        width: 100.0,
+        height: 100.0,
+        child: GestureDetector(
+            onTap: () => setState(() {
+                  color = Colors.green;
+                }),
+            child: Text('${widget.i}', textDirection: TextDirection.ltr)));
+  }
+}
+
+class TestFlowDelegate extends FlowDelegate {
+  TestFlowDelegate({this.startOffset}) : super(repaint: startOffset);
+
+  final Animation<double> startOffset;
+
+  @override
+  BoxConstraints getConstraintsForChild(int i, BoxConstraints constraints) {
+    return constraints.loosen();
+  }
+
+  @override
+  void paintChildren(FlowPaintingContext context) {
+    double dy = startOffset.value;
+    for (int i = 0; i < context.childCount; ++i) {
+      context.paintChild(i, transform: Matrix4.translationValues(0.0, dy, 0.0));
+      dy += 2 * context.getChildSize(i).height;
+    }
+  }
+
+  @override
+  bool shouldRepaint(TestFlowDelegate oldDelegate) =>
+      startOffset == oldDelegate.startOffset;
+}
+
+class OpacityFlowDelegate extends FlowDelegate {
+  OpacityFlowDelegate(this.opacity);
+
+  double opacity;
+
+  @override
+  void paintChildren(FlowPaintingContext context) {
+    for (int i = 0; i < context.childCount; ++i) {
+      context.paintChild(i, opacity: opacity);
+    }
+  }
+
+  @override
+  bool shouldRepaint(OpacityFlowDelegate oldDelegate) =>
+      opacity != oldDelegate.opacity;
 }
