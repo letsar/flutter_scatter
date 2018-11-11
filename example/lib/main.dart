@@ -4,6 +4,31 @@ import 'package:flutter_scatter/flutter_scatter.dart';
 
 void main() => runApp(MyApp());
 
+class TextApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Align(
+        alignment: Alignment.topLeft,
+        child: Scatter(
+          delegate: AlignScatterDelegate(alignment: Alignment(1.0, 0.5)),
+          children: List.generate(
+            4,
+            (i) => Container(
+                  width: 20.0,
+                  height: 20.0,
+                  key: ValueKey(i),
+                  color: i.isEven ? Colors.blue : Colors.orange,
+                  child: Text('$i'),
+                ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
@@ -15,6 +40,13 @@ class MyApp extends StatelessWidget {
       ),
       home: Page(),
     );
+  }
+}
+
+class DiagonalScatterDelegate extends ScatterDelegate {
+  @override
+  Offset getPositionForIteration(int iteration, ScatterContext context) {
+    return context.bounds.bottomRight;
   }
 }
 
@@ -33,9 +65,75 @@ class Page extends StatelessWidget {
       body: Center(
         child: FittedBox(
           child: Scatter(
-            alignment: Alignment.center,
-            delegate: ArchimedeanSpiralScatterDelegate(),
+            fillGaps: true,
+            delegate: TArchimedeanSpiralScatterDelegate(ratio: 16.0 / 9.0),
             children: widgets,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class StatePage extends StatefulWidget {
+  @override
+  _StatePageState createState() => new _StatePageState();
+}
+
+class _StatePageState extends State<StatePage> with TickerProviderStateMixin {
+  AnimationController controller;
+  Tween<double> aTween = Tween<double>(begin: 0.1, end: 20.0);
+  Tween<double> bTween = Tween<double>(begin: 0.1, end: 10.0);
+  Tween<double> stepTween = Tween<double>(begin: 0.01, end: 0.05);
+  Animation<double> stepAnimation;
+  Animation<double> aAnimation;
+  Animation<double> bAnimation;
+
+  void initState() {
+    super.initState();
+    controller =
+        AnimationController(vsync: this, duration: Duration(seconds: 10));
+    stepAnimation = stepTween.animate(controller);
+    aAnimation = aTween.animate(controller);
+    bAnimation = bTween.animate(controller);
+  }
+
+  void dispose() {
+    controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    List<Widget> widgets = <Widget>[];
+    for (var i = 0; i < kFlutterHashtags.length; i++) {
+      widgets.add(ScatterItem(kFlutterHashtags[i], i));
+    }
+
+    final screenSize = MediaQuery.of(context).size;
+    final ratio = screenSize.width / screenSize.height;
+
+    return Scaffold(
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => controller.forward(),
+        child: Center(
+          child: FittedBox(
+            child: AnimatedBuilder(
+              animation: controller,
+              builder: (context, child) {
+                return Scatter(
+                  fillGaps: false,
+                  delegate: ArchimedeanSpiralScatterDelegate(
+                    ratio: 16.0 / 9.0,
+                    a: 0.01, //aAnimation.value,
+                    b: bAnimation.value,
+                    step: 0.01,
+                  ),
+                  children: widgets,
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -55,20 +153,20 @@ class ScatterItem extends StatelessWidget {
           color: hashtag.color,
         );
 
-    return Container(
-      height: 20.0,
-      width: 20.0,
-      decoration: BoxDecoration(shape: BoxShape.circle, color: hashtag.color),
-      child: Center(child: Text('$index')),
-    );
-
-    // return RotatedBox(
-    //   quarterTurns: hashtag.rotated ? 1 : 0,
-    //   child: Text(
-    //     hashtag.hashtag,
-    //     style: style,
-    //   ),
+    // return Container(
+    //   height: 20.0,
+    //   width: 20.0,
+    //   decoration: BoxDecoration(shape: BoxShape.circle, color: hashtag.color),
+    //   child: Center(child: Text('$index')),
     // );
+
+    return RotatedBox(
+      quarterTurns: hashtag.rotated ? 1 : 0,
+      child: Text(
+        hashtag.hashtag,
+        style: style,
+      ),
+    );
   }
 }
 
