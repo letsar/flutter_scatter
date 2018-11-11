@@ -16,10 +16,12 @@ class ScatterContext {
     this.childSize,
     this.previousChldRect,
     this.bounds,
+    this.alignment,
   );
   final Size childSize;
   final Rect previousChldRect;
   final Rect bounds;
+  final Alignment alignment;
 }
 
 /// A delegate that controls the layout of a [Scatter].
@@ -59,10 +61,25 @@ abstract class ScatterDelegate {
     _ratioY = ratio <= 1 ? ratio : 1.0;
   }
 
+  /// Returns the child offset for the given iteration.
+  ///
+  /// For a given iteration, the position should be unique.
+  Offset getChildOffsetForIteration(int iteration, ScatterContext context) {
+    final Offset position = getPositionForIteration(iteration, context);
+    return getChildOffset(position, context);
+  }
+
   /// Returns an offset for the specified iteration.
   ///
   /// For a given iteration, the offset should be unique.
+  @protected
   Offset getPositionForIteration(int iteration, ScatterContext context);
+
+  /// Returns the child offset for the given position.
+  @protected
+  Offset getChildOffset(Offset position, ScatterContext context) {
+    return position - context.alignment.alongSize(context.childSize);
+  }
 
   /// Override this method to return true when the children need to be laid out.
   /// This should compare the fields of the current delegate and the given
@@ -187,108 +204,6 @@ class FermatSpiralScatterDelegate extends ArchimedeanSpiralScatterDelegate {
   double computeRadius(double angle) => a + b * math.sqrt(angle);
 }
 
-class TestArchimedeanSpiralScatterDelegate extends ScatterDelegate {
-  TestArchimedeanSpiralScatterDelegate({
-    ratio,
-    this.radius = 300.0,
-    this.sides = 300.0,
-    this.coils = 8.0,
-    double rotation = 0.5,
-  })  : awayStep = radius / sides,
-        aroundStep = coils / sides,
-        aroundRadians = coils * math.pi * 2 / sides,
-        rotation = rotation * 2 * math.pi;
-
-  final double radius;
-  final double sides;
-  final double coils;
-  final double rotation;
-
-  final double awayStep;
-  final double aroundStep;
-  final double aroundRadians;
-
-  Offset getPositionForIteration(int iteration, ScatterContext context) {
-    final double ratio = this.ratio ??
-        (availableSize.isFinite
-            ? availableSize.width / availableSize.height
-            : 1.0);
-    final double ratioX = ratio >= 1 ? ratio : 1.0;
-    final double ratioY = ratio <= 1 ? ratio : 1.0;
-
-    final double away = iteration * awayStep;
-    final double around = iteration * aroundRadians + rotation;
-    final double x = math.cos(around) * away * ratioX;
-    final double y = math.sin(around) * away * ratioY;
-    return Offset(x, y);
-  }
-
-  bool shouldRelayout(
-      covariant TestArchimedeanSpiralScatterDelegate oldDelegate) {
-    return super.shouldRelayout(oldDelegate) ||
-        oldDelegate.radius != radius ||
-        oldDelegate.sides != sides ||
-        oldDelegate.coils != coils ||
-        oldDelegate.rotation != rotation ||
-        oldDelegate.ratio != ratio;
-  }
-}
-
-class TArchimedeanSpiralScatterDelegate extends ScatterDelegate {
-  static const double _2pi = math.pi * 2;
-
-  TArchimedeanSpiralScatterDelegate({
-    double ratio = 1.0,
-    this.radius = 10.0,
-    this.distance = 10.00,
-    this.dt = 0.01,
-    this.type = 1,
-    double rotation = 0.0,
-  })  : assert(type != null && type != 0),
-        _rotationRadians = rotation * 2 * math.pi,
-        super(ratio: ratio);
-
-  /// The number of turns between two successive iterations.
-  ///
-  /// For example if dt=0.25, for each iteration
-  /// θ will be increased by 0.25 * 2π.
-  final double dt;
-
-  /// The initial radius of the spiral.
-  ///
-  /// This is the **a** parameter in the equation **r = a+bθ**.
-  final double radius;
-
-  /// The distance between successive turns of the spiral.
-  ///
-  /// This is the **b** parameter in the equation **r = a+bθ**.
-  final double distance;
-
-  final double _rotationRadians;
-
-  final int type;
-
-  Offset getPositionForIteration(
-    int iteration,
-    ScatterContext context,
-  ) {
-    final double theta = iteration * dt * _2pi;
-    final double r = radius + distance * theta;
-    final double x = ratioX * r * math.cos(theta + _rotationRadians);
-    final double y = ratioY * r * math.sin(theta + _rotationRadians);
-    return Offset(x, y);
-  }
-
-  bool shouldRelayout(covariant TArchimedeanSpiralScatterDelegate oldDelegate) {
-    return super.shouldRelayout(oldDelegate) ||
-        oldDelegate.radius != radius ||
-        oldDelegate.distance != distance ||
-        oldDelegate.dt != dt ||
-        oldDelegate._rotationRadians != _rotationRadians ||
-        oldDelegate.type != type;
-  }
-}
-
 /// A [ScatterDelegate] that places children in a Logarithmic spiral.
 /// See: https://en.wikipedia.org/wiki/Logarithmic_spiral.
 class LogarithmicSpiralScatterDelegate extends SpiralScatterDelegate {
@@ -338,8 +253,13 @@ class AlignScatterDelegate extends ScatterDelegate {
 
   @override
   Offset getPositionForIteration(int iteration, ScatterContext context) {
-    return alignment.withinRect(context.previousChldRect) -
-        _oppositeAlignment.alongSize(context.childSize);
+    return alignment.withinRect(context.previousChldRect);
+  }
+
+  /// Returns the child offset for the given position.
+  @protected
+  Offset getChildOffset(Offset position, ScatterContext context) {
+    return position - _oppositeAlignment.alongSize(context.childSize);
   }
 }
 
@@ -424,13 +344,16 @@ class RenderScatter extends RenderBox
   /// Creates a scatter render object.
   RenderScatter({
     @required ScatterDelegate delegate,
+    Alignment alignment = Alignment.topLeft,
     List<RenderBox> children,
     Overflow overflow = Overflow.clip,
     int maxChildIteration = 10000,
     bool fillGaps = false,
   })  : assert(delegate != null),
+        assert(alignment != null),
         assert(maxChildIteration != null && maxChildIteration > 0),
         _delegate = delegate,
+        _alignment = alignment,
         _overflow = overflow,
         _maxChildIteration = maxChildIteration,
         _fillGaps = fillGaps {
@@ -452,6 +375,18 @@ class RenderScatter extends RenderBox
       markNeedsLayout();
     }
     _delegate = value;
+  }
+
+  // Determine how the children will be placed.
+  Alignment get alignment => _alignment;
+  Alignment _alignment;
+  set alignment(Alignment value) {
+    assert(value != null);
+    if (_alignment == value) {
+      return;
+    }
+    _alignment = value;
+    markNeedsLayout();
   }
 
   /// Whether overflowing children should be clipped. See [Overflow].
@@ -505,89 +440,6 @@ class RenderScatter extends RenderBox
       child.parentData = ScatterParentData();
   }
 
-  // @override
-  // void performLayout() {
-  //   _hasVisualOverflow = false;
-  //   if (childCount == 0) {
-  //     size = constraints.smallest;
-  //     assert(size.isFinite);
-  //     return;
-  //   }
-
-  //   Rect bounds = Rect.zero;
-
-  //   final Size maxSize = constraints.biggest;
-  //   delegate._setAvailableSize(maxSize);
-
-  //   RenderBox child = firstChild;
-  //   int index = 0;
-  //   Rect previousChildRect = Rect.zero;
-  //   int iteration = -1;
-  //   while (child != null) {
-  //     if (_fillGaps) {
-  //       iteration = -1;
-  //     }
-
-  //     final ScatterParentData childParentData = child.parentData;
-  //     childParentData.index = index;
-
-  //     child.layout(constraints, parentUsesSize: true);
-
-  //     final Size childSize = child.size;
-  //     childParentData.width = childSize.width;
-  //     childParentData.height = childSize.height;
-
-  //     // Place the child following the placement strategy
-  //     // until it does not overlap any previous child.
-  //     final int max =
-  //         _fillGaps ? _maxChildIteration * (index + 1) : _maxChildIteration;
-  //     final int startIteration = iteration;
-  //     do {
-  //       if (iteration - startIteration >= max) {
-  //         throw FlutterError('Too much iterations for one child.\n'
-  //             'It may be impossible to place another child with this delegate '
-  //             'or consider to increase to maxChildIteration');
-  //       }
-
-  //       final position = delegate.getPositionForIteration(
-  //         ++iteration,
-  //         ScatterContext._(
-  //           childSize,
-  //           previousChildRect,
-  //           bounds,
-  //         ),
-  //       );
-  //       childParentData.offset = position;
-  //     } while (_overlaps(childParentData));
-
-  //     previousChildRect = childParentData.rect;
-  //     bounds = bounds.expandToInclude(previousChildRect);
-
-  //     child = childParentData.nextSibling;
-  //     index++;
-  //   }
-
-  //   size = constraints
-  //       .tighten(width: bounds.width, height: bounds.height)
-  //       .smallest;
-
-  //   _hasVisualOverflow =
-  //       size.width < bounds.width || size.height < bounds.height;
-
-  //   // Center the scatter.
-  //   Offset boundsCenter = bounds.center;
-  //   Offset scatterCenter = size.center(Offset.zero);
-  //   Offset translation = scatterCenter - boundsCenter;
-
-  //   // Move the whole scatter to the center.
-  //   child = firstChild;
-  //   while (child != null) {
-  //     final ScatterParentData childParentData = child.parentData;
-  //     childParentData.offset += translation;
-  //     child = childParentData.nextSibling;
-  //   }
-  // }
-
   @override
   void performLayout() {
     _hasVisualOverflow = false;
@@ -604,7 +456,13 @@ class RenderScatter extends RenderBox
 
     RenderBox child = firstChild;
     int index = 0;
+    Rect previousChildRect = Rect.zero;
+    int iteration = -1;
     while (child != null) {
+      if (_fillGaps) {
+        iteration = -1;
+      }
+
       final ScatterParentData childParentData = child.parentData;
       childParentData.index = index;
 
@@ -616,20 +474,30 @@ class RenderScatter extends RenderBox
 
       // Place the child following the placement strategy
       // until it does not overlap any previous child.
-      int iteration = -1;
+      final int max =
+          _fillGaps ? _maxChildIteration * (index + 1) : _maxChildIteration;
+      final int startIteration = iteration;
       do {
-        final position = delegate.getPositionForIteration(
+        if (iteration - startIteration >= max) {
+          throw FlutterError('Too much iterations for one child.\n'
+              'It may be impossible to place another child with this delegate '
+              'or consider to increase to maxChildIteration');
+        }
+
+        final childOffset = delegate.getChildOffsetForIteration(
           ++iteration,
           ScatterContext._(
             childSize,
-            null,
+            previousChildRect,
             bounds,
+            alignment,
           ),
         );
-        childParentData.offset = position;
+        childParentData.offset = childOffset;
       } while (_overlaps(childParentData));
 
-      bounds = bounds.expandToInclude(childParentData.rect);
+      previousChildRect = childParentData.rect;
+      bounds = bounds.expandToInclude(previousChildRect);
 
       child = childParentData.nextSibling;
       index++;

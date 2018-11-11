@@ -9,6 +9,7 @@ class Scatter extends MultiChildRenderObjectWidget {
   Scatter({
     Key key,
     ScatterDelegate delegate,
+    this.alignment = Alignment.center,
     this.overflow = Overflow.clip,
     this.maxChildIteration = 10000,
     this.fillGaps = false,
@@ -18,6 +19,14 @@ class Scatter extends MultiChildRenderObjectWidget {
 
   /// The delegate that controls the layout of the [Scatter].
   final ScatterDelegate delegate;
+
+  /// Determine how the children will be placed on
+  /// the [ScatterDelegate.getPositionForIteration] offset.
+  ///
+  /// For example if [alignement] is [Alignment.center], all
+  /// offsets given by [ScatterDelegate.getPositionForIteration]
+  /// will be at center of a child.
+  final Alignment alignment;
 
   /// Whether overflowing children should be clipped. See [Overflow].
   ///
@@ -44,6 +53,7 @@ class Scatter extends MultiChildRenderObjectWidget {
   RenderObject createRenderObject(BuildContext context) {
     return RenderScatter(
       delegate: delegate,
+      alignment: alignment,
       overflow: overflow,
       maxChildIteration: maxChildIteration,
       fillGaps: fillGaps,
@@ -54,6 +64,7 @@ class Scatter extends MultiChildRenderObjectWidget {
   void updateRenderObject(BuildContext context, RenderScatter renderObject) {
     renderObject
       ..delegate = delegate
+      ..alignment = alignment
       ..overflow = overflow
       ..maxChildIteration = maxChildIteration
       ..fillGaps = fillGaps;

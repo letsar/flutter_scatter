@@ -10,14 +10,15 @@ class TextApp extends StatelessWidget {
     return Directionality(
       textDirection: TextDirection.ltr,
       child: Align(
-        alignment: Alignment.topLeft,
+        alignment: Alignment.center,
         child: Scatter(
-          delegate: AlignScatterDelegate(alignment: Alignment(1.0, 0.5)),
+          alignment: Alignment.center,
+          delegate: AlignScatterDelegate(alignment: Alignment.topCenter),
           children: List.generate(
             4,
             (i) => Container(
-                  width: 20.0,
-                  height: 20.0,
+                  width: (i + 1) * 20.0,
+                  height: (i + 1) * 20.0,
                   key: ValueKey(i),
                   color: i.isEven ? Colors.blue : Colors.orange,
                   child: Text('$i'),
@@ -66,74 +67,8 @@ class Page extends StatelessWidget {
         child: FittedBox(
           child: Scatter(
             fillGaps: true,
-            delegate: TArchimedeanSpiralScatterDelegate(ratio: 16.0 / 9.0),
+            delegate: ArchimedeanSpiralScatterDelegate(ratio: 16.0 / 9.0),
             children: widgets,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class StatePage extends StatefulWidget {
-  @override
-  _StatePageState createState() => new _StatePageState();
-}
-
-class _StatePageState extends State<StatePage> with TickerProviderStateMixin {
-  AnimationController controller;
-  Tween<double> aTween = Tween<double>(begin: 0.1, end: 20.0);
-  Tween<double> bTween = Tween<double>(begin: 0.1, end: 10.0);
-  Tween<double> stepTween = Tween<double>(begin: 0.01, end: 0.05);
-  Animation<double> stepAnimation;
-  Animation<double> aAnimation;
-  Animation<double> bAnimation;
-
-  void initState() {
-    super.initState();
-    controller =
-        AnimationController(vsync: this, duration: Duration(seconds: 10));
-    stepAnimation = stepTween.animate(controller);
-    aAnimation = aTween.animate(controller);
-    bAnimation = bTween.animate(controller);
-  }
-
-  void dispose() {
-    controller?.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    List<Widget> widgets = <Widget>[];
-    for (var i = 0; i < kFlutterHashtags.length; i++) {
-      widgets.add(ScatterItem(kFlutterHashtags[i], i));
-    }
-
-    final screenSize = MediaQuery.of(context).size;
-    final ratio = screenSize.width / screenSize.height;
-
-    return Scaffold(
-      body: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => controller.forward(),
-        child: Center(
-          child: FittedBox(
-            child: AnimatedBuilder(
-              animation: controller,
-              builder: (context, child) {
-                return Scatter(
-                  fillGaps: false,
-                  delegate: ArchimedeanSpiralScatterDelegate(
-                    ratio: 16.0 / 9.0,
-                    a: 0.01, //aAnimation.value,
-                    b: bAnimation.value,
-                    step: 0.01,
-                  ),
-                  children: widgets,
-                );
-              },
-            ),
           ),
         ),
       ),
