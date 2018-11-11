@@ -446,6 +446,7 @@ class RenderScatter extends RenderBox
     Rect bounds = Rect.zero;
 
     final Size maxSize = constraints.biggest;
+    size = Size.zero;
     delegate._setAvailableSize(maxSize);
 
     RenderBox child = firstChild;
@@ -480,7 +481,6 @@ class RenderScatter extends RenderBox
           }
           return true;
         }());
-
         final childOffset = delegate.getChildOffsetForIteration(
           ++iteration,
           ScatterContext._(

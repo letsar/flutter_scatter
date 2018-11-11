@@ -86,6 +86,10 @@ For example this is what the above word cloud would look if the `fillGaps` argum
 
 ![Ellipses](./doc/images/ellipse.png)
 
+## Examples
+
+You can find more examples in this [app](https://github.com/letsar/flutter_scatter/tree/master/example).
+
 ## Changelog
 
 Please see the [Changelog](https://github.com/letsar/flutter_scatter/blob/master/CHANGELOG.md) page to know what's recently changed.
