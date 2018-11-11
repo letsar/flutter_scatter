@@ -1,6 +1,6 @@
-import 'package:example/flutter_hashtags.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_scatter/flutter_scatter.dart';
+import '../flutter_hashtags.dart';
 
 class WordCloudExample extends StatelessWidget {
   @override

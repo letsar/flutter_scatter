@@ -1,9 +1,9 @@
-import 'package:example/screens/align.dart';
-import 'package:example/screens/archi_spiral.dart';
-import 'package:example/screens/circle.dart';
-import 'package:example/screens/word_cloud.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_scatter/flutter_scatter.dart';
+import 'screens/align.dart';
+import 'screens/archi_spiral.dart';
+import 'screens/circle.dart';
+import 'screens/word_cloud.dart';
 
 void main() => runApp(ScatterApp());
 
