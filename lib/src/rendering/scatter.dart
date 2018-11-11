@@ -271,23 +271,19 @@ class EllipseScatterDelegate extends ScatterDelegate {
   /// The parametric representation of an ellipse is
   /// **(x,y)=(a cos θ, b sin θ)**
   ///
-  /// The arguments must be positive and cannot be null.
+  /// The arguments cannot be null.
+  /// The arguments [a] and [b] must be positive and [step] cannot be zero.
   EllipseScatterDelegate({
     @required this.a,
     @required this.b,
     double step = 0.01,
     double start = 0.0,
-    double end = 0.0,
-    double rotation = 0.0,
   })  : assert(a != null && a > 0),
         assert(b != null && b > 0),
-        assert(step != null && step > 0),
-        assert(start != null && start > 0),
-        assert(end != null && end > 0 && end >= start),
+        assert(step != null && step != 0),
+        assert(start != null),
         _stepRadians = step * _2pi,
-        _startRadians = start * _2pi,
-        _endRadians = end * _2pi,
-        _rotationRadians = rotation * _2pi;
+        _startRadians = start * _2pi;
 
   /// Semi x-axis.
   final double a;
@@ -297,8 +293,6 @@ class EllipseScatterDelegate extends ScatterDelegate {
 
   final double _stepRadians;
   final double _startRadians;
-  final double _endRadians;
-  final double _rotationRadians;
 
   @override
   Offset getPositionForIteration(int iteration, ScatterContext context) {
@@ -478,11 +472,14 @@ class RenderScatter extends RenderBox
           _fillGaps ? _maxChildIteration * (index + 1) : _maxChildIteration;
       final int startIteration = iteration;
       do {
-        if (iteration - startIteration >= max) {
-          throw FlutterError('Too much iterations for one child.\n'
-              'It may be impossible to place another child with this delegate '
-              'or consider to increase to maxChildIteration');
-        }
+        assert(() {
+          if (iteration - startIteration >= max) {
+            throw FlutterError('Too much iterations for one child.\n'
+                'It may be impossible to place another child with this delegate '
+                'or consider to increase to maxChildIteration');
+          }
+          return true;
+        }());
 
         final childOffset = delegate.getChildOffsetForIteration(
           ++iteration,
