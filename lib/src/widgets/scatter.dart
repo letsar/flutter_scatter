@@ -7,10 +7,10 @@ import 'package:flutter_scatter/src/rendering/scatter.dart';
 /// This class is useful when you want to create a cloud of words.
 class Scatter extends MultiChildRenderObjectWidget {
   Scatter({
-    Key key,
-    ScatterDelegate delegate,
+    Key? key,
+    ScatterDelegate? delegate,
     this.alignment = Alignment.center,
-    this.overflow = Overflow.clip,
+    this.clip = Clip.antiAlias,
     this.maxChildIteration = 10000,
     this.fillGaps = false,
     List<Widget> children = const <Widget>[],
@@ -28,11 +28,11 @@ class Scatter extends MultiChildRenderObjectWidget {
   /// will be at center of a child.
   final Alignment alignment;
 
-  /// Whether overflowing children should be clipped. See [Overflow].
+  /// Whether overflowing children should be clipped. See [Clip].
   ///
   /// Some children in a scatter might overflow its box. When this flag is set to
-  /// [Overflow.clip], children cannot paint outside of the stack's box.
-  final Overflow overflow;
+  /// [Clip.antiAlias], children cannot paint outside of the stack's box.
+  final Clip clip;
 
   /// The maximum of iterations we can do for one child.
   ///
@@ -54,7 +54,7 @@ class Scatter extends MultiChildRenderObjectWidget {
     return RenderScatter(
       delegate: delegate,
       alignment: alignment,
-      overflow: overflow,
+      clip: clip,
       maxChildIteration: maxChildIteration,
       fillGaps: fillGaps,
     );
@@ -65,7 +65,7 @@ class Scatter extends MultiChildRenderObjectWidget {
     renderObject
       ..delegate = delegate
       ..alignment = alignment
-      ..overflow = overflow
+      ..clip = clip
       ..maxChildIteration = maxChildIteration
       ..fillGaps = fillGaps;
   }

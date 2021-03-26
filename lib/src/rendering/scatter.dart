@@ -37,22 +37,22 @@ abstract class ScatterDelegate {
   /// For example if ratio is 16.0/9.0,
   /// children must be placed in a rectangle box
   /// with dimensions width/height respecting 16.0/9.0.
-  final double ratio;
+  final double? ratio;
 
-  double _ratioX;
+  double? _ratioX;
 
   /// The ratio used for the x-axis points.
-  double get ratioX => _ratioX;
+  double? get ratioX => _ratioX;
 
-  double _ratioY;
+  double? _ratioY;
 
   /// The ratio used for the y-axis points.
-  double get ratioY => _ratioY;
+  double? get ratioY => _ratioY;
 
-  Size _availableSize;
+  Size? _availableSize;
 
   /// The available size to place children.
-  Size get availableSize => _availableSize;
+  Size? get availableSize => _availableSize;
   void _setAvailableSize(Size value) {
     _availableSize = value;
     final double ratio =
@@ -108,11 +108,11 @@ abstract class SpiralScatterDelegate extends ScatterDelegate {
   /// The [rotation] is a value between 0.0 and 1.0.
   /// A [rotation] of 0.5 represents a rotation of π/2 radians.
   SpiralScatterDelegate({
-    double ratio,
+    double? ratio,
     double step = 0.01,
     double rotation = 0.0,
-  })  : assert(step != null && step >= 0.0 && step <= 1.0),
-        assert(rotation != null && rotation >= 0.0 && rotation <= 1.0),
+  })  : assert(step >= 0.0 && step <= 1.0),
+        assert(rotation >= 0.0 && rotation <= 1.0),
         _stepRadians = step * _2pi,
         _rotationRadians = rotation * _2pi,
         super(ratio: ratio);
@@ -127,8 +127,8 @@ abstract class SpiralScatterDelegate extends ScatterDelegate {
   ) {
     final double angle = iteration * _stepRadians;
     final double radius = computeRadius(angle);
-    final double x = ratioX * radius * math.cos(angle + _rotationRadians);
-    final double y = ratioY * radius * math.sin(angle + _rotationRadians);
+    final double x = ratioX! * radius * math.cos(angle + _rotationRadians);
+    final double y = ratioY! * radius * math.sin(angle + _rotationRadians);
     return Offset(x, y);
   }
 
@@ -149,7 +149,7 @@ class ArchimedeanSpiralScatterDelegate extends SpiralScatterDelegate {
   ///
   /// An archimedean spiral has this polar equation: **r=a+bθ**
   ArchimedeanSpiralScatterDelegate({
-    double ratio,
+    double? ratio,
     this.a = 10.0,
     this.b = 10.0,
     double step = 0.01,
@@ -188,7 +188,7 @@ class FermatSpiralScatterDelegate extends ArchimedeanSpiralScatterDelegate {
   ///
   /// A Fermat spiral has this polar equation: **r=a+b√θ**
   FermatSpiralScatterDelegate({
-    double ratio,
+    double? ratio,
     double a = 1.0,
     double b = 15.0,
     double step = 0.47,
@@ -211,7 +211,7 @@ class LogarithmicSpiralScatterDelegate extends SpiralScatterDelegate {
   ///
   /// A logarithmic spiral has this polar equation: **r=ae^bθ**
   LogarithmicSpiralScatterDelegate({
-    double ratio,
+    double? ratio,
     this.a = 1.0,
     this.b = 0.3063489,
     double step = 0.01,
@@ -242,8 +242,7 @@ class AlignScatterDelegate extends ScatterDelegate {
   /// The [alignment] must not be null, and must be on the side.
   AlignScatterDelegate({
     this.alignment = Alignment.bottomRight,
-  })  : assert(alignment != null &&
-            (alignment.x.abs() == 1 || alignment.y.abs() == 1)),
+  })  : assert((alignment.x.abs() == 1 || alignment.y.abs() == 1)),
         _oppositeAlignment = -alignment;
 
   /// How to align a child with the previous one.
@@ -274,14 +273,13 @@ class EllipseScatterDelegate extends ScatterDelegate {
   /// The arguments cannot be null.
   /// The arguments [a] and [b] must be positive and [step] cannot be zero.
   EllipseScatterDelegate({
-    @required this.a,
-    @required this.b,
+    required this.a,
+    required this.b,
     double step = 0.01,
     double start = 0.0,
-  })  : assert(a != null && a > 0),
-        assert(b != null && b > 0),
-        assert(step != null && step != 0),
-        assert(start != null),
+  })  : assert(a > 0),
+        assert(b > 0),
+        assert(step != 0),
         _stepRadians = step * _2pi,
         _startRadians = start * _2pi;
 
@@ -306,13 +304,13 @@ class EllipseScatterDelegate extends ScatterDelegate {
 /// Parent data used by [RenderScatter] and its subclasses.
 class ScatterParentData extends ContainerBoxParentData<RenderBox> {
   // The index of the child in the children list.
-  int index;
+  int? index;
 
   /// The child's width.
-  double width;
+  late double width;
 
   /// The child's height.
-  double height;
+  late double height;
 
   Rect get rect => Rect.fromLTWH(
         offset.dx,
@@ -337,18 +335,16 @@ class RenderScatter extends RenderBox
         RenderBoxContainerDefaultsMixin<RenderBox, ScatterParentData> {
   /// Creates a scatter render object.
   RenderScatter({
-    @required ScatterDelegate delegate,
+    required ScatterDelegate delegate,
     Alignment alignment = Alignment.topLeft,
-    List<RenderBox> children,
-    Overflow overflow = Overflow.clip,
+    List<RenderBox>? children,
+    Clip clip = Clip.antiAlias,
     int maxChildIteration = 10000,
     bool fillGaps = false,
-  })  : assert(delegate != null),
-        assert(alignment != null),
-        assert(maxChildIteration != null && maxChildIteration > 0),
+  })  : assert(maxChildIteration > 0),
         _delegate = delegate,
         _alignment = alignment,
-        _overflow = overflow,
+        _clip = clip,
         _maxChildIteration = maxChildIteration,
         _fillGaps = fillGaps {
     addAll(children);
@@ -360,7 +356,6 @@ class RenderScatter extends RenderBox
   ScatterDelegate get delegate => _delegate;
   ScatterDelegate _delegate;
   set delegate(ScatterDelegate value) {
-    assert(value != null);
     if (_delegate == value) {
       return;
     }
@@ -375,7 +370,6 @@ class RenderScatter extends RenderBox
   Alignment get alignment => _alignment;
   Alignment _alignment;
   set alignment(Alignment value) {
-    assert(value != null);
     if (_alignment == value) {
       return;
     }
@@ -383,16 +377,15 @@ class RenderScatter extends RenderBox
     markNeedsLayout();
   }
 
-  /// Whether overflowing children should be clipped. See [Overflow].
+  /// Whether overflowing children should be clipped. See [Clip].
   ///
   /// Some children in a stack might overflow its box. When this flag is set to
-  /// [Overflow.clip], children cannot paint outside of the stack's box.
-  Overflow get overflow => _overflow;
-  Overflow _overflow;
-  set overflow(Overflow value) {
-    assert(value != null);
-    if (_overflow != value) {
-      _overflow = value;
+  /// [Clip.antiAlias], children cannot paint outside of the stack's box.
+  Clip get clip => _clip;
+  Clip _clip;
+  set clip(Clip value) {
+    if (_clip != value) {
+      _clip = value;
       markNeedsPaint();
     }
   }
@@ -404,7 +397,6 @@ class RenderScatter extends RenderBox
   int get maxChildIteration => _maxChildIteration;
   int _maxChildIteration;
   set maxChildIteration(int value) {
-    assert(value != null);
     if (_maxChildIteration != value) {
       _maxChildIteration = value;
       markNeedsPaint();
@@ -421,7 +413,6 @@ class RenderScatter extends RenderBox
   bool get fillGaps => _fillGaps;
   bool _fillGaps;
   set fillGaps(bool value) {
-    assert(value != null);
     if (_fillGaps != value) {
       _fillGaps = value;
       markNeedsPaint();
@@ -449,7 +440,7 @@ class RenderScatter extends RenderBox
     size = Size.zero;
     delegate._setAvailableSize(maxSize);
 
-    RenderBox child = firstChild;
+    RenderBox? child = firstChild;
     int index = 0;
     Rect previousChildRect = Rect.zero;
     int iteration = -1;
@@ -458,7 +449,8 @@ class RenderScatter extends RenderBox
         iteration = -1;
       }
 
-      final ScatterParentData childParentData = child.parentData;
+      final ScatterParentData childParentData =
+          child.parentData as ScatterParentData;
       childParentData.index = index;
 
       child.layout(constraints, parentUsesSize: true);
@@ -515,7 +507,8 @@ class RenderScatter extends RenderBox
     // Move the whole scatter to the center.
     child = firstChild;
     while (child != null) {
-      final ScatterParentData childParentData = child.parentData;
+      final ScatterParentData childParentData =
+          child.parentData as ScatterParentData;
       childParentData.offset += translation;
       child = childParentData.nextSibling;
     }
@@ -524,10 +517,10 @@ class RenderScatter extends RenderBox
   bool _overlaps(ScatterParentData data) {
     final Rect rect = data.rect;
 
-    RenderBox child = data.previousSibling;
+    RenderBox? child = data.previousSibling;
 
     while (child != null) {
-      ScatterParentData childParentData = child.parentData;
+      ScatterParentData childParentData = child.parentData as ScatterParentData;
       if (rect.overlaps(childParentData.rect)) {
         return true;
       }
@@ -537,18 +530,19 @@ class RenderScatter extends RenderBox
   }
 
   @override
-  double computeDistanceToActualBaseline(TextBaseline baseline) {
+  double? computeDistanceToActualBaseline(TextBaseline baseline) {
     return defaultComputeDistanceToHighestActualBaseline(baseline);
   }
 
   @override
-  bool hitTestChildren(HitTestResult result, {Offset position}) {
-    return defaultHitTestChildren(result, position: position);
+  bool hitTestChildren(HitTestResult result, {required Offset position}) {
+    return defaultHitTestChildren(result as BoxHitTestResult,
+        position: position);
   }
 
   @override
   void paint(PaintingContext context, Offset offset) {
-    if (_hasVisualOverflow && _overflow == Overflow.clip)
+    if (_hasVisualOverflow && _clip != Clip.none)
       context.pushClipRect(
         needsCompositing,
         offset,
